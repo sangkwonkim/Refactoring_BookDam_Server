@@ -3,6 +3,7 @@ const { Op } = require('sequelize');
 const bcrypt = require('bcrypt');
 // const saltRounds = 10;
 const { User: UserModel, Article: ArticleModel, Follow: FollowModel } = require('../models');
+const { isAuthorized } = require('./tokenFunctions/index')
 
 module.exports = {
   login: async (req, res) => { // test done
@@ -26,33 +27,32 @@ module.exports = {
       return res.status(400).json({ message: '비밀번호가 틀렸습니다.' });
     }
     delete userData.dataValues.password;
-    const accessToken = jwt.sign(user, process.env.ACCESS_SECRET, { expiresIn: '24h' });
+    const accessToken = jwt.sign(user, process.env.ACCESS_SECRET, { expiresIn: '1m' });
     res.location('https://bookdam.link/feedPage');
     res.cookie('jwt', accessToken, {
       maxAge: 24 * 60 * 60 * 1000,
       sameSite: 'strict',
       domain: '.bookdam.link',
       httpOnly: true,
-      secure: true,
+      secure: true
     }).status(200).json({ message: 'success', userInfo: userData });
   },
   logout: async (req, res) => { // test done
-    const cookie = req.cookies.jwt;
-    if (!cookie) return res.status(401).json({ message: '로그인 유저가 아닙니다.' });
-    let decodedData;
-    jwt.verify(cookie, process.env.ACCESS_SECRET, function (error, decoded) {
-      if (error) return res.status(401).json({ message: '토큰 만료로 로그인이 필요합니다.' });
-      else {
-        decodedData = decoded;
-      }
-    });
-    const findUser = await UserModel.findOne({
-      where: { id: decodedData.id, userId: decodedData.userId }
-    });
-    if (!findUser) return res.status(400).json({ message: '로그아웃에 실패했습니다.' });
-    else {
-      // res.location('https://bookdam.link/')
+    try {
+      const cookie = req.cookies.jwt;
+      if (!cookie) return res.status(401).json({ message: '로그인 유저가 아닙니다.' });
+      let decodedData = isAuthorized(cookie, res)
+      const findUser = await UserModel.findOne({
+        where: { id: decodedData.id, userId: decodedData.userId }
+      });
+      if (!findUser) return res.status(400).json({ message: '유저가 없어 로그아웃에 실패했습니다.' });
       res.clearCookie('jwt').status(200).json({ message: '로그아웃 되었습니다.' });
+    } catch(error) {
+      // console.log(error)
+      if(error.name === 'TokenExpiredError') return res.status(401).json({ message: '토큰 만료로 로그인이 필요합니다.', error : error});
+      else {
+        return res.status(400).json({ message: '로그아웃에 실패했습니다.', error : error });
+      }
     }
   },
   signup: async (req, res) => { // test done
