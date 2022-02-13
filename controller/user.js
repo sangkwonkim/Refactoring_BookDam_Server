@@ -3,7 +3,7 @@ const { Op } = require('sequelize');
 const bcrypt = require('bcrypt');
 // const saltRounds = 10;
 const { User: UserModel, Article: ArticleModel, Follow: FollowModel } = require('../models');
-const { isAuthorized } = require('./tokenFunctions/index')
+const { isAuthorized } = require('./tokenFunctions/index');
 
 module.exports = {
   login: async (req, res) => { // test done
@@ -37,21 +37,23 @@ module.exports = {
       secure: true
     }).status(200).json({ message: 'success', userInfo: userData });
   },
-  logout: async (req, res) => { // test done
+  logout: async (req, res) => {
     try {
       const cookie = req.cookies.jwt;
-      if (!cookie) return res.status(401).json({ message: '로그인 유저가 아닙니다.' });
-      let decodedData = isAuthorized(cookie, res)
+      if (!cookie) throw '로그인 유저가 아닙니다.';
+      const decodedData = isAuthorized(cookie, res);
       const findUser = await UserModel.findOne({
         where: { id: decodedData.id, userId: decodedData.userId }
       });
-      if (!findUser) return res.status(400).json({ message: '유저가 없어 로그아웃에 실패했습니다.' });
+      if (!findUser) throw error;
+      // 쿠키 상으로 로그인은 되어있지만, db에서 유저의 정보를 찾지 못할 때의 처리
+      // empty일 경우 catch가 아닌 다음 코드로 진행되는 에러가 발생함 => 서버 에러
+
       res.clearCookie('jwt').status(200).json({ message: '로그아웃 되었습니다.' });
-    } catch(error) {
-      // console.log(error)
-      if(error.name === 'TokenExpiredError') return res.status(401).json({ message: '토큰 만료로 로그인이 필요합니다.', error : error});
+    } catch (error) {
+      if (error.name === 'TokenExpiredError' || error === '로그인 유저가 아닙니다.') return res.status(401).json({ message: '로그인 유저가 아닙니다.' });
       else {
-        return res.status(400).json({ message: '로그아웃에 실패했습니다.', error : error });
+        return res.status(500).json({ message: '로그아웃에 실패했습니다.' });
       }
     }
   },

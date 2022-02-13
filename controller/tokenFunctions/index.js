@@ -4,9 +4,9 @@ module.exports = {
   isAuthorized: (cookie) => {
     try {
       const token = jwt.verify(cookie, process.env.ACCESS_SECRET);
-      return token
+      return token;
     } catch (error) {
-      throw error
+      throw error;
     }
-  },
+  }
 };
