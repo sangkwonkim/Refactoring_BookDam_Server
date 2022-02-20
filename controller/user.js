@@ -134,174 +134,127 @@ module.exports = {
       if (Number.isNaN(page)) throw '요청이 잘 못 되었습니다.';
 
       const cookie = req.cookies.jwt;
-      if (!cookie) return res.status(401).json({ message: '로그인 유저가 아닙니다.' });
+      if (!cookie) throw '로그인 유저가 아닙니다.';
 
       const decodedData = isAuthorized(cookie);
-      
+
       const findUser = await UserModel.findOne({
         where: { id: id }
       });
-      if (!findUser) return res.status(401).json({ message: 'failure' });
+      if (!findUser) throw error;
 
       const isfollow = await FollowModel.findAndCountAll({ where: { user_Id: decodedData.id, follow_Id: id } });
       const findFollowing = await FollowModel.findAndCountAll({ where: { user_Id: id } });
       const findFollower = await FollowModel.findAndCountAll({ where: { follow_Id: id } });
 
+      const follow = { following: findFollowing.count, follower: findFollower.count };
+      const findArtilces = await ArticleModel.findAndCountAll({
+        attributes: { exclude: ['updatedAt'] },
+        order: [['id', 'DESC']],
+        raw: true,
+        limit: 8,
+        offset: page * 8,
+        include: [{
+          model: UserModel,
+          attributes: { exclude: ['id', 'updatedAt', 'createdAt', 'password'] },
+          where: { id: id }
+        }]
+      });
+
+      if (id === decodedData.id) {
+        return res.status(200).json({ message: 'success', userInfo: findUser, follow, articleData: findArtilces });
+      } else {
+        return res.status(200).json({ message: 'success', userInfo: findUser, follow, articleData: findArtilces, isfollow: isfollow.count });
+      }
     } catch (error) {
       if (error === '요청이 잘 못 되었습니다.') return res.status(400).json({ message: error });
       else if (error.name === 'TokenExpiredError' || error === '로그인 유저가 아닙니다.') return res.status(401).json({ message: '로그인 유저가 아닙니다.' });
-      else if (error === '본인만 탈퇴를 요청할 수 있습니다.') return res.status(403).json({ message: '본인만 탈퇴를 요청할 수 있습니다.' });
       else {
-        return res.status(500).json({ message: '회원탈퇴에 실패했습니다.' });
+        return res.status(500).json({ message: '회원 조회에 실패했습니다.' });
       }
     }
+  },
+  patch: async (req, res) => {
+    try {
+      const id = parseInt(req.params.user_Id, 10);
+      if (Number.isNaN(id)) throw '요청이 잘 못 되었습니다.';
+      const cookie = req.cookies.jwt;
+      if (!cookie) throw '로그인 유저가 아닙니다.';
+      const decodedData = isAuthorized(cookie);
+      if (id !== decodedData.id) throw '본인만 회원정보를 수정할 수 있습니다.';
 
-    if (Number.isNaN(findFollowing) || Number.isNaN(findFollower)) return res.status(400).json({ message: 'failure' });
-    const follow = { following: findFollowing.count, follower: findFollower.count };
-    const findArtilces = await ArticleModel.findAndCountAll({
-      attributes: { exclude: ['updatedAt'] },
-      order: [['id', 'DESC']],
-      raw: true,
-      limit: 8,
-      offset: page * 8,
-      include: [{
-        model: UserModel,
-        attributes: { exclude: ['id', 'updatedAt', 'createdAt', 'password'] },
+      const userInfo = req.body.userInfo;
+      if (!userInfo) throw '요청이 잘 못 되었습니다.';
+      if (userInfo.password) userInfo.password = bcrypt.hashSync(userInfo.password, 10);
+      const modifyUser = await UserModel.update(
+        userInfo, { where: { id: id } });
+      const findUser = await UserModel.findOne({
+        attributes: { exclude: ['updatedAt', 'createdAt', 'password'] },
         where: { id: id }
-      }]
-    });
-    if (Number.isNaN(findArtilces.count)) return res.status(400).json({ message: 'failure' });
-    // res.location('/') mypage or userpage/:username 이 들어가는데... 구분하는 방법에 대해서 고민해보기
-
-    if (id === decodedData.id) {
-      res.status(200).json({ message: 'success', userInfo: findUser, follow, articleData: findArtilces });
-    } else {
-      res.status(200).json({ message: 'success', userInfo: findUser, follow, articleData: findArtilces, isfollow: isfollow.count });
+      });
+      res.status(201).json({ message: 'success', userInfo: findUser });
+    } catch (error) {
+      if (error === '요청이 잘 못 되었습니다.') return res.status(400).json({ message: error });
+      else if (error.name === 'TokenExpiredError' || error === '로그인 유저가 아닙니다.') return res.status(401).json({ message: '로그인 유저가 아닙니다.' });
+      else if (error === '본인만 회원정보를 수정할 수 있습니다.') return res.status(403).json({ message: '본인만 회원정보를 수정할 수 있습니다.' });
+      else {
+        return res.status(500).json({ message: '회원정보 수정에 실패했습니다.' });
+      }
     }
   },
-  patch: (req, res) => { // test done
-    const id = parseInt(req.params.user_Id, 10);
-    if (Number.isNaN(id)) return res.status(400).json({ message: 'failure' });
-    const cookie = req.cookies.jwt;
-    if (!cookie) return res.status(401).json({ message: '로그인 유저가 아닙니다.' });
-    let decodedData;
-    jwt.verify(cookie, process.env.ACCESS_SECRET, function (error, decoded) {
-      if (error) return res.status(401).json({ message: '토큰 만료로 로그인이 필요합니다.' });
-      else {
-        decodedData = decoded;
-      }
-    });
-    if (id !== decodedData.id) return res.status(401).json({ message: 'failure' });
-    const userInfo = req.body.userInfo;
-    if (!userInfo) return res.status(400).json({ message: 'failure' });
-    // if (userInfo.password) {
-    //   bcrypt.genSalt(saltRounds, function (err, salt) {
-    //     if (err) return res.status(400).json({ message: 'GenSalt error', error: err });
-    //     bcrypt.hash(userInfo.password, salt, function (err, hash) {
-    //       if (err) return res.status(400).json({ message: 'Password hash error', error: err });
-    //       userInfo.password = hash;
-    //       UserModel.update(
-    //         userInfo, { where: { id: id } })
-    //         .then(() => {
-    //           UserModel.findOne({
-    //             attributes: { exclude: ['updatedAt', 'createdAt', 'password'] },
-    //             where: { id: id }
-    //           })
-    //             .then((result) => {
-    //               res.status(201).json({ message: 'success', userInfo: result });
-    //             })
-    //             .catch((error) => {
-    //               res.status(400).json({ message: 'failure', error: error });
-    //             });
-    //         })
-    //         .catch((error) => {
-    //           res.status(400).json({ message: 'failure', error: error });
-    //         });
-    //     });
-    //   });
-    // } else {
-    //   UserModel.update(
-    //     userInfo, { where: { id: id } })
-    //     .then(() => {
-    //       UserModel.findOne({
-    //         attributes: { exclude: ['updatedAt', 'createdAt', 'password'] },
-    //         where: { id: id }
-    //       })
-    //         .then((result) => {
-    //           res.status(201).json({ message: 'success', userInfo: result });
-    //         })
-    //         .catch((error) => {
-    //           res.status(400).json({ message: 'failure', error: error });
-    //         });
-    //     })
-    //     .catch((error) => {
-    //       res.status(400).json({ message: 'failure', error: error });
-    //     });
-    // }
-    // bcrypt 동기적, 비동기적인 처리 차이를 실제로 보고 처리를 해볼 예정입니다.
-    if (userInfo.password) userInfo.password = bcrypt.hashSync(userInfo.password, 10);
-    UserModel.update(
-      userInfo, { where: { id: id } })
-      .then(() => {
-        UserModel.findOne({
-          attributes: { exclude: ['updatedAt', 'createdAt', 'password'] },
-          where: { id: id }
-        })
-          .then((result) => {
-            // res.location('/mypage')
-            res.status(201).json({ message: 'success', userInfo: result });
-          })
-          .catch((error) => {
-            res.status(400).json({ message: 'failure', error: error });
-          });
-      })
-      .catch((error) => {
-        res.status(400).json({ message: 'failure', error: error });
+  search: async (req, res) => {
+    try {
+      const name = req.query.name;
+      if (!name) throw '요청이 잘 못 되었습니다.';
+      const cookie = req.cookies.jwt;
+      if (!cookie) throw '로그인 유저가 아닙니다.';
+      const decodedData = isAuthorized(cookie);
+      const searchInfo = await UserModel.findAll({
+        attributes: { exclude: ['updatedAt', 'createdAt', 'password'] },
+        where: {
+          [Op.or]: [
+            { userId: { [Op.like]: `%${name}%` } },
+            { userNickName: { [Op.like]: `%${name}%` } }
+          ]
+        }
       });
-  },
-  search: async (req, res) => { // test done
-    const name = req.query.name;
-    if (!name) return res.status(400).json({ message: 'failure' });
-    const cookie = req.cookies.jwt;
-    if (!cookie) return res.status(401).json({ message: '로그인 유저가 아닙니다.' });
-    jwt.verify(cookie, process.env.ACCESS_SECRET, function (error, decoded) {
-      if (error) return res.status(401).json({ message: '토큰 만료로 로그인이 필요합니다.' });
-    });
-    const searchInfo = await UserModel.findAll({
-      attributes: { exclude: ['updatedAt', 'createdAt', 'password'] },
-      where: {
-        [Op.or]: [
-          { userId: { [Op.like]: `%${name}%` } },
-          { userNickName: { [Op.like]: `%${name}%` } }
-        ]
+      if (!searchInfo) throw '정확한 유저의 정보를 입력해주세요.';
+      res.status(200).json({ message: 'success', searchInfo: searchInfo });
+    } catch (error) {
+      if (error === '요청이 잘 못 되었습니다.') return res.status(400).json({ message: error });
+      else if (error.name === 'TokenExpiredError' || error === '로그인 유저가 아닙니다.') return res.status(401).json({ message: '로그인 유저가 아닙니다.' });
+      else if (error === '정확한 유저의 정보를 입력해주세요.') return res.status(404).json({ message: '정확한 유저의 정보를 입력해주세요.' });
+      else {
+        return res.status(500).json({ message: '유저 검색에 실패했습니다.' });
       }
-    });
-    if (!searchInfo) return res.status(404).json({ message: '정확한 유저의 정보를 입력해주세요.' });
-    res.status(200).json({ message: 'success', searchInfo: searchInfo });
+    }
   },
   validation: async (req, res) => {
-    const id = parseInt(req.params.user_Id, 10);
-    const password = req.body.userInfo.password;
-    if (!password) return res.status(400).json({ message: 'failure' });
-    if (Number.isNaN(id)) return res.status(400).json({ message: 'failure' });
-    const cookie = req.cookies.jwt;
-    if (!cookie) return res.status(401).json({ message: '로그인 유저가 아닙니다.' });
-    let decodedData;
-    jwt.verify(cookie, process.env.ACCESS_SECRET, function (error, decoded) {
-      if (error) return res.status(401).json({ message: '토큰 만료로 로그인이 필요합니다.' });
-      else {
-        decodedData = decoded;
+    try {
+      const id = parseInt(req.params.user_Id, 10);
+      const password = req.body.userInfo.password;
+      if (!password) throw '요청이 잘 못 되었습니다.';
+      if (Number.isNaN(id)) throw '요청이 잘 못 되었습니다.';
+      const cookie = req.cookies.jwt;
+      if (!cookie) throw '로그인 유저가 아닙니다.';
+      const decodedData = isAuthorized(cookie);
+      const findUser = await UserModel.findOne({
+        where: { id: decodedData.id, userId: decodedData.userId }
+      });
+      if (!findUser) throw error;
+      const userPassword = findUser.password;
+      const same = bcrypt.compareSync(password, userPassword);
+      if (!same) {
+        throw '비밀번호가 틀렸습니다.';
       }
-    });
-    const findUser = await UserModel.findOne({
-      where: { id: decodedData.id, userId: decodedData.userId }
-    });
-    if (!findUser) return res.status(401).json({ message: 'failure' });
-    const userPassword = findUser.password;
-    const same = bcrypt.compareSync(password, userPassword);
-    if (!same) {
-      return res.status(400).json({ message: '비밀번호가 틀렸습니다.' });
+      res.status(200).json({ message: '비밀번호가 맞습니다.' });
+    } catch (error) {
+      if (error === '요청이 잘 못 되었습니다.') return res.status(400).json({ message: error });
+      else if (error.name === 'TokenExpiredError' || error === '로그인 유저가 아닙니다.') return res.status(401).json({ message: '로그인 유저가 아닙니다.' });
+      else if (error === '비밀번호가 틀렸습니다.') return res.status(404).json({ message: '비밀번호가 틀렸습니다.' });
+      else {
+        return res.status(500).json({ message: '비밀번호 검증에 실패했습니다.' });
+      }
     }
-    res.status(200).json({ message: '비밀번호가 맞습니다.' });
   }
 };
