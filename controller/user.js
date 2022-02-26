@@ -16,7 +16,7 @@ module.exports = {
         },
         attributes: { exclude: ['updatedAt', 'createdAt'] }
       });
-      if (!userData) return res.status(400).json({ message: '회원가입한 유저가 아닙니다.' });
+      if (!userData) return res.status(404).json({ message: '회원가입한 유저가 아닙니다.' });
       const userPassword = userData.password;
       const user = {
         id: userData.id,
@@ -47,7 +47,7 @@ module.exports = {
       const findUser = await UserModel.findOne({
         where: { id: decodedData.id, userId: decodedData.userId }
       });
-      if (!findUser) return res.status(401).json({ message: '로그인 유저가 아닙니다.' });
+      if (!findUser) return res.status(404).json({ message: '사용자 정보를 찾을 수 없습니다.' });
       // 쿠키 상으로 로그인은 되어있지만, db에서 유저의 정보가 없을 때의 처리
       // null일 경우 catch가 아닌 다음 코드로 진행되는 에러가 발생함
 
@@ -121,7 +121,6 @@ module.exports = {
       const page = parseInt(req.query.page, 10);
       if (Number.isNaN(id)) return res.status(400).json({ message: '요청이 잘 못 되었습니다.' });
       if (Number.isNaN(page)) return res.status(400).json({ message: '요청이 잘 못 되었습니다.' });
-
       const cookie = req.cookies.jwt;
       if (!cookie) return res.status(401).json({ message: '로그인 유저가 아닙니다.' });
       const decodedData = isAuthorized(cookie);
@@ -130,11 +129,9 @@ module.exports = {
         where: { id: id }
       });
       if (!findUser) return res.status(404).json({ message: '사용자 정보를 찾을 수 없습니다.' });
-
       const isfollow = await FollowModel.findAndCountAll({ where: { user_Id: decodedData.id, follow_Id: id } });
       const findFollowing = await FollowModel.findAndCountAll({ where: { user_Id: id } });
       const findFollower = await FollowModel.findAndCountAll({ where: { follow_Id: id } });
-
       const follow = { following: findFollowing.count, follower: findFollower.count };
       const findArtilces = await ArticleModel.findAndCountAll({
         attributes: { exclude: ['updatedAt'] },
@@ -148,7 +145,6 @@ module.exports = {
           where: { id: id }
         }]
       });
-
       if (id === decodedData.id) {
         return res.status(200).json({ message: 'success', userInfo: findUser, follow, articleData: findArtilces });
       } else {
@@ -171,7 +167,7 @@ module.exports = {
       if (id !== decodedData.id) return res.status(403).json({ message: '본인만 회원정보를 수정할 수 있습니다.' });
 
       const userInfo = req.body.userInfo;
-      if (!userInfo) return res.status(400).json({ message: '요청이 잘 못 되었습니다.' });
+      if (!userInfo) return res.status(400).json({ message: '수정할 정보를 정확하게 입력해주세요.' });
       if (userInfo.password) userInfo.password = bcrypt.hashSync(userInfo.password, 10);
       const modifyUser = await UserModel.update(
         userInfo, { where: { id: id } });
@@ -204,7 +200,6 @@ module.exports = {
           ]
         }
       });
-      if (searchInfo.length === 0) return res.status(404).json({ message: '정확한 유저의 정보를 입력해주세요.' });
       res.status(200).json({ message: 'success', searchInfo: searchInfo });
     } catch (error) {
       if (error.name === 'TokenExpiredError') {

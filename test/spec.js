@@ -1,6 +1,6 @@
 const app = require('../app');
 const request = require('supertest');
-const models = require('../models');
+const models = require('../models/index');
 const should = require('should');
 const { User: UserModel, Article: ArticleModel, Follow: FollowModel } = require('../models');
 
