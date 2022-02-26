@@ -1,4 +1,4 @@
-const { Follow: FollowModel } = require('../models');
+const { User: UserModel, Follow: FollowModel } = require('../models');
 const jwt = require('jsonwebtoken');
 const { isAuthorized } = require('./tokenFunctions/index');
 
@@ -14,6 +14,10 @@ module.exports = {
       if (!cookie) return res.status(401).json({ message: '로그인 유저가 아닙니다.' });
       const decodedData = isAuthorized(cookie);
       if (id !== decodedData.id) return res.status(403).json({ message: '본인만 팔로우를 요청할 수 있습니다.' });
+      const findUser = await UserModel.findOne({
+        where : { id : follow_Id }
+      })
+      if (!findUser) return res.status(400).json({ message: '존재하지 않는 유저입니다.' });
       const followUser = await FollowModel.findOrCreate({
         where: {
           user_Id: id,
