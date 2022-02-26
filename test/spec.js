@@ -4,8 +4,6 @@ const models = require('../models/index');
 const should = require('should');
 const { User: UserModel, Article: ArticleModel, Follow: FollowModel } = require('../models');
 
-// ---------------------------- 데이터 베이스 사용
-
 describe('POST /user/login', () => {
   describe('성공 시', () => {
     before(() => models.sequelize.sync({ force: true }));
