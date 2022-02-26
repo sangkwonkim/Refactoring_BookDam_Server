@@ -1,39 +1,39 @@
 const app = require('../app');
 const request = require('supertest');
 const models = require('../models');
-const should = require('should')
+const should = require('should');
 const { User: UserModel, Article: ArticleModel, Follow: FollowModel } = require('../models');
 
 // ---------------------------- 데이터 베이스 사용
 
 describe('POST /user/login', () => {
-    describe('성공 시', () => {
-        before(() => models.sequelize.sync({force: true}))
-        before(() => UserModel.queryInterface.bulkInsert('Users', [{
-            userId : "guest",
-            password : "$2b$10$RJq0gXxBHhLsRhMtI8U3p./kk.KPvdohoMx179N3HvbUaDpPbMi1.",
-            userNickName: 'sangkwon',
-            userImage: 'https://img.icons8.com/flat-round/512/000000/bird--v1.png',
-            createdAt: new Date(),
-            updatedAt: new Date()
-        }]))
-        it('로그인 성공 시 응답 상태 코드는 200을 반환한다.', (done) => {
-            request(app)
-                .post('/user/login')
-                .send({userInfo : { userId : 'guest', password : '1234' }})
-                .expect(200, done)
-        })
-        it('로그인 성공 시 성공 메세지를 반환한다.', (done) => {
-            request(app)
-                .post('/user/login')
-                .send({userInfo : { userId : 'guest', password : '1234' }})
-                .end((err, res) => {
-                    res.body.should.have.property('message', 'success');
-                    done();
-                })
-        })
-    })
-})
+  describe('성공 시', () => {
+    before(() => models.sequelize.sync({ force: true }));
+    before(() => UserModel.queryInterface.bulkInsert('Users', [{
+      userId: 'guest',
+      password: '$2b$10$RJq0gXxBHhLsRhMtI8U3p./kk.KPvdohoMx179N3HvbUaDpPbMi1.',
+      userNickName: 'sangkwon',
+      userImage: 'https://img.icons8.com/flat-round/512/000000/bird--v1.png',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }]));
+    it('로그인 성공 시 응답 상태 코드는 200을 반환한다.', (done) => {
+      request(app)
+        .post('/user/login')
+        .send({ userInfo: { userId: 'guest', password: '1234' } })
+        .expect(200, done);
+    });
+    it('로그인 성공 시 성공 메세지를 반환한다.', (done) => {
+      request(app)
+        .post('/user/login')
+        .send({ userInfo: { userId: 'guest', password: '1234' } })
+        .end((err, res) => {
+          res.body.should.have.property('message', 'success');
+          done();
+        });
+    });
+  });
+});
 
 // describe('POST /user/login은', () => {
 //     const users = [{name: 'alice'}, {name: 'bek'}, {name: 'chris'}] // bulkCreate 에 들어갈 자료들
@@ -42,11 +42,11 @@ describe('POST /user/login', () => {
 //     before(() => models.User.bulkCreate(users))
 //     describe('성공 시', () => {
 //         it('유저 객체를 담은 배열로 응답한다', (done) => {
-//             request(app) 
+//             request(app)
 //             .post('/user/login').send({
 //                 userInfo : {
 //                     userId: 'kimcoding',
-//                     password: 'helloWorld', 
+//                     password: 'helloWorld',
 //                 }
 //             })
 //             .expect(400, { name: "alice" }) // 4번
@@ -70,7 +70,7 @@ describe('POST /user/login', () => {
 //     //         request(app)
 //     //         // db에 직접 접속하기 전에 테스트가 통과될 수 있다.
 //     //         .get('/users?limit=two')
-//     //         .expect(400) 
+//     //         .expect(400)
 //     //         .end(done)
 //     //     })
 //     // })
@@ -104,7 +104,7 @@ describe('POST /user/login', () => {
 //             .expect(404)
 //             .end(done)
 //         })
-//     })  
+//     })
 // })
 
 // describe(' DELETE /users/1는', () => {
@@ -116,7 +116,7 @@ describe('POST /user/login', () => {
 //         it('204를 응답한다', (done) => {
 //             request(app)
 //             .delete('/users/1')
-//             .expect(204) 
+//             .expect(204)
 //             .end(done)
 //         })
 //     })
@@ -141,7 +141,7 @@ describe('POST /user/login', () => {
 //         before((done) => {
 //             request(app)
 //             .post('/users')
-//             .send({name}) 
+//             .send({name})
 //             .expect(201)
 //             .end((err, res) => {
 //                 body = res.body;
