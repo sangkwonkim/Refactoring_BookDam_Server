@@ -36,7 +36,7 @@ module.exports = {
         secure: true
       }).status(200).json({ message: 'success', userInfo: userData });
     } catch {
-        res.status(500).json({ message: '로그인에 실패했습니다.' });
+      res.status(500).json({ message: '로그인에 실패했습니다.' });
     }
   },
   logout: async (req, res) => {
@@ -53,10 +53,10 @@ module.exports = {
 
       res.clearCookie('jwt').status(200).json({ message: '로그아웃 되었습니다.' });
     } catch (error) {
-        if(error.name === 'TokenExpiredError') {
-          return res.clearCookie('jwt').status(200).json({ message: '로그아웃 되었습니다.' });
-        }
-        res.status(500).json({ message: '로그아웃에 실패했습니다.' });
+      if (error.name === 'TokenExpiredError') {
+        return res.clearCookie('jwt').status(200).json({ message: '로그아웃 되었습니다.' });
+      }
+      res.status(500).json({ message: '로그아웃에 실패했습니다.' });
     }
   },
   signup: async (req, res) => {
@@ -109,7 +109,7 @@ module.exports = {
       const deleteUser = await UserModel.destroy({ where: { id: id } });
       res.clearCookie('jwt').status(200).json({ message: '유저가 탈퇴되었습니다.' });
     } catch (error) {
-      if(error.name === 'TokenExpiredError') {
+      if (error.name === 'TokenExpiredError') {
         return res.status(401).json({ message: '로그인 유효기간이 만료되었습니다.' });
       }
       res.status(500).json({ message: '회원탈퇴에 실패했습니다.' });
@@ -155,7 +155,7 @@ module.exports = {
         return res.status(200).json({ message: 'success', userInfo: findUser, follow, articleData: findArtilces, isfollow: isfollow.count });
       }
     } catch (error) {
-      if(error.name === 'TokenExpiredError') {
+      if (error.name === 'TokenExpiredError') {
         return res.status(401).json({ message: '로그인 유효기간이 만료되었습니다.' });
       }
       res.status(500).json({ message: '회원 조회에 실패했습니다.' });
@@ -175,14 +175,14 @@ module.exports = {
       if (userInfo.password) userInfo.password = bcrypt.hashSync(userInfo.password, 10);
       const modifyUser = await UserModel.update(
         userInfo, { where: { id: id } });
-      if(modifyUser[0] === 0) return res.status(404).json({ message: '사용자 정보를 찾을 수 없습니다.' });
+      if (modifyUser[0] === 0) return res.status(404).json({ message: '사용자 정보를 찾을 수 없습니다.' });
       const findUser = await UserModel.findOne({
         attributes: { exclude: ['updatedAt', 'createdAt', 'password'] },
         where: { id: id }
       });
       res.status(201).json({ message: 'success', userInfo: findUser });
     } catch (error) {
-      if(error.name === 'TokenExpiredError') {
+      if (error.name === 'TokenExpiredError') {
         return res.status(401).json({ message: '로그인 유효기간이 만료되었습니다.' });
       }
       res.status(500).json({ message: '회원정보 수정에 실패했습니다.' });
@@ -207,7 +207,7 @@ module.exports = {
       if (searchInfo.length === 0) return res.status(404).json({ message: '정확한 유저의 정보를 입력해주세요.' });
       res.status(200).json({ message: 'success', searchInfo: searchInfo });
     } catch (error) {
-      if(error.name === 'TokenExpiredError') {
+      if (error.name === 'TokenExpiredError') {
         return res.status(401).json({ message: '로그인 유효기간이 만료되었습니다.' });
       }
       res.status(500).json({ message: '유저 검색에 실패했습니다.' });
@@ -233,7 +233,7 @@ module.exports = {
       }
       res.status(200).json({ message: '비밀번호가 맞습니다.' });
     } catch (error) {
-      if(error.name === 'TokenExpiredError') {
+      if (error.name === 'TokenExpiredError') {
         return res.status(401).json({ message: '로그인 유효기간이 만료되었습니다.' });
       }
       res.status(500).json({ message: '비밀번호 검증에 실패했습니다.' });
