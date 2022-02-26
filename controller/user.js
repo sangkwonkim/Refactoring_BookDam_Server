@@ -175,6 +175,7 @@ module.exports = {
       if (userInfo.password) userInfo.password = bcrypt.hashSync(userInfo.password, 10);
       const modifyUser = await UserModel.update(
         userInfo, { where: { id: id } });
+      if(modifyUser[0] === 0) return res.status(404).json({ message: '사용자 정보를 찾을 수 없습니다.' });
       const findUser = await UserModel.findOne({
         attributes: { exclude: ['updatedAt', 'createdAt', 'password'] },
         where: { id: id }
