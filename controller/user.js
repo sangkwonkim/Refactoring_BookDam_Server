@@ -88,7 +88,8 @@ module.exports = {
         follow_Id: 2
       });
       res.status(201).json({ message: 'success', userInfo: userDate });
-    } catch {
+    } catch (error) {
+      console.log(error);
       res.status(500).json({ message: '회원가입에 실패했습니다.' });
     }
   },

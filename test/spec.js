@@ -57,7 +57,6 @@ describe('POST /user/login', () => {
     });
   });
 });
-
 describe('POST /user/logout', () => {
   before(() => models.sequelize.sync({ force: true }));
   before(() => UserModel.queryInterface.bulkInsert('Users', [{
@@ -78,14 +77,12 @@ describe('POST /user/logout', () => {
     it('응답 상태 코드는 200을 반환한다.', (done) => {
       request(app)
         .post('/user/logout')
-        // .withCredentials()
         .set('Cookie', `jwt=${accessToken}`)
         .expect(200, done);
     });
     it('성공 메세지를 반환한다.', (done) => {
       request(app)
       .post('/user/logout')
-      // .withCredentials()
       .set('Cookie', `jwt=${accessToken}`)
         .end((err, res) => {
           res.body.should.have.property('message', '로그아웃 되었습니다.');
@@ -113,5 +110,69 @@ describe('POST /user/logout', () => {
         .post('/user/logout')
         .expect(401, done);
     });
+  });
+});
+
+describe('POST /user/signup', () => {
+  before(() => models.sequelize.sync({ force: true }));
+  before(() => UserModel.queryInterface.bulkInsert('Users', [{
+    id : 2,
+    userId: 'Bookdam',
+    password: '$2b$10$RJq0gXxBHhLsRhMtI8U3p./kk.KPvdohoMx179N3HvbUaDpPbMi1.',
+    userNickName: 'Bookdam',
+    userImage: 'https://img.icons8.com/flat-round/512/000000/bird--v1.png',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }]));
+  describe('성공 시', () => {
+    it('응답 상태 코드는 201을 반환한다.', (done) => {
+      request(app)
+        .post('/user/signup')
+        .send({ userInfo : {
+          userId: 'guest',
+          password: '1234',
+          userNickName: 'guest',
+        }})
+        .expect(201, done);
+    });
+    it('성공 메세지와 유저의 정보를 반환한다.', (done) => {
+      request(app)
+      .post('/user/signup')
+      .send({ userInfo : {
+        userId: 'sangkwon',
+        password: '1234',
+        userNickName: 'sangkwon',
+      }})
+      .end((err, res) => {
+        res.body.should.have.property('message', 'success');
+        res.body.should.have.property('userInfo');
+        res.body.userInfo.should.have.property('userId');
+        res.body.userInfo.should.have.property('userNickName');
+        res.body.userInfo.should.have.property('userImage');
+        done()
+      })
+    });
+  });
+  describe('실패 시', () => {
+      let body;
+      it('회원정보가 부족하면 400을 리턴한다.', (done) => {
+        request(app)
+        .post('/user/signup')
+        .send({ userInfo : {
+          userId: 'David',
+          userNickName: 'Daniel',
+        }})
+        .expect(400, done);
+      });
+      it('중복된 아이디일 경우 400을 리턴한다.', (done) => {
+        request(app)
+          .post('/user/signup')
+          .send({ userInfo : {
+            userId: 'sangkwon',
+            password: '1234',
+            userNickName: 'sangkwon',
+          }})
+          .expect(400, done)
+      })
   });
 });
