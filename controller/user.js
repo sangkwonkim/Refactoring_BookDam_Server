@@ -31,7 +31,7 @@ module.exports = {
       res.cookie('jwt', accessToken, {
         maxAge: 24 * 60 * 60 * 1000,
         sameSite: 'strict',
-        domain: '.bookdam.link',
+        // domain: '.bookdam.link',
         httpOnly: true,
         secure: true
       }).status(200).json({ message: 'success', userInfo: userData });
