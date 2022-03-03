@@ -5,4 +5,4 @@
 #### async/await문에서 try/catch 예외처리 적용하기
 ### 테스트 코드 실행 방법
 #### package.json에서 "test": "NODE_ENV=test mocha test/followSpec.js -w --timeout 5000",
-#### test/ 다음 파일명을 user || follow || article 로 변경 후 npm test 진행
+#### test/ 다음 파일명을 userSpec.js || followSpec.js || articleSpec.js 로 변경 후 npm test 진행
