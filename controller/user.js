@@ -212,11 +212,12 @@ module.exports = {
     try {
       const id = parseInt(req.params.user_Id, 10);
       const password = req.body.userInfo.password;
-      if (!password) return res.status(400).json({ message: '요청이 잘 못 되었습니다.' });
       if (Number.isNaN(id)) return res.status(400).json({ message: '요청이 잘 못 되었습니다.' });
+      if (!password) return res.status(400).json({ message: '요청이 잘 못 되었습니다.' });
       const cookie = req.cookies.jwt;
       if (!cookie) return res.status(401).json({ message: '로그인 유저가 아닙니다.' });
       const decodedData = isAuthorized(cookie);
+      if (id !== decodedData.id) return res.status(403).json({ message: '본인만 비밀번호를 확인할 수 있습니다.' });
       const findUser = await UserModel.findOne({
         where: { id: decodedData.id, userId: decodedData.userId }
       });

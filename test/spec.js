@@ -446,3 +446,133 @@ describe('PATCH /user/:id', () => {
     });
   });
 });
+
+describe('GET /user', () => {
+  before(() => models.sequelize.sync({ force: true }));
+  before(() => UserModel.queryInterface.bulkInsert('Users', [{
+    id : 1,
+    userId: 'guest',
+    password: '$2b$10$RJq0gXxBHhLsRhMtI8U3p./kk.KPvdohoMx179N3HvbUaDpPbMi1.',
+    userNickName: 'guest',
+    userImage: 'https://img.icons8.com/flat-round/512/000000/bird--v1.png',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }, {
+    id : 2,
+    userId: 'sangkwon',
+    password: '$2b$10$RJq0gXxBHhLsRhMtI8U3p./kk.KPvdohoMx179N3HvbUaDpPbMi1.',
+    userNickName: 'backendDeveloper',
+    userImage: 'https://img.icons8.com/flat-round/512/000000/bird--v1.png',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }]));
+  const user = {
+    id: 1,
+    userId: 'guest'
+  };
+  const accessToken = jwt.sign(user, process.env.ACCESS_SECRET, { expiresIn: '1d' });
+  describe('성공 시', () => {
+    it('응답 상태 코드는 200을 반환한다.', (done) => {
+      request(app)
+        .get('/user?name=sangkwon')
+        .set('Cookie', `jwt=${accessToken}`)
+        .expect(200, done)
+    });
+    it('userId나 userNickName의 일부만 작성해도 검색 결과를 반환한다.', (done) => {
+      request(app)
+        .get('/user?name=back')
+        .set('Cookie', `jwt=${accessToken}`)
+        .expect(200)
+        .end((err, res) => {
+          res.body.searchInfo[0].should.have.property('userNickName', 'backendDeveloper');
+          done();
+        })
+    });
+  });
+  describe('실패 시', () => {
+    it('쿼리로 name을 전달하지 않을 경우 400을 반환한다.', (done) => {
+      request(app)
+        .get('/user')
+        .expect(400, done)
+    });
+    it('요청에 쿠키가 없을 경우 401을 반환한다.', (done) => {
+      request(app)
+        .get('/user?name=sang')
+        .expect(401, done)
+    });
+  });
+});
+
+describe('POST /user/validation/:user_Id', () => {
+  before(() => models.sequelize.sync({ force: true }));
+  before(() => UserModel.queryInterface.bulkInsert('Users', [{
+    id : 1,
+    userId: 'guest',
+    password: '$2b$10$RJq0gXxBHhLsRhMtI8U3p./kk.KPvdohoMx179N3HvbUaDpPbMi1.',
+    userNickName: 'guest',
+    userImage: 'https://img.icons8.com/flat-round/512/000000/bird--v1.png',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }]));
+  const user = {
+    id: 1,
+    userId: 'guest'
+  };
+  const accessToken = jwt.sign(user, process.env.ACCESS_SECRET, { expiresIn: '1d' });
+  describe('성공 시', () => {
+    it('응답 상태 코드는 200을 반환한다.', (done) => {
+      request(app)
+        .post('/user/validation/1')
+        .set('Cookie', `jwt=${accessToken}`)
+        .send({ userInfo : { 
+          password : '1234'
+        }})
+        .expect(200, done)
+    });
+    it('응답 메세지를 반환한다.', (done) => {
+      request(app)
+        .post('/user/validation/1')
+        .set('Cookie', `jwt=${accessToken}`)
+        .send({ userInfo : { 
+          password : '1234'
+        }})
+        .expect(200)
+        .end((err, res) => {
+          res.body.should.have.property('message', '비밀번호가 맞습니다.')
+          done();
+        })
+    });
+  });
+  describe('실패 시', () => {
+    it('요청에 password가 없을 경우 400을 반환한다.', (done) => {
+      request(app)
+        .post('/user/validation/1')
+        .set('Cookie', `jwt=${accessToken}`)
+        .send({ userInfo : {}})
+        .expect(400, done)
+    });
+    it('정수가 아닌 id를 입력할 경우 400을 반환한다.', (done) => {
+      request(app)
+        .post('/user/validation/one')
+        .send({ userInfo : { password : '1234'}})
+        .expect(400, done)
+    });
+    it('요청에 쿠키가 없을 경우 401을 반환한다.', (done) => {
+      request(app)
+        .post('/user/validation/1')
+        .send({ userInfo : { password : '1234'}})
+        .expect(401, done)
+    });
+    it('입력된 id와 쿠키의 id가 다를 경우 403을 반환한다.', (done) => {
+      request(app)
+        .post('/user/validation/3')
+        .set('Cookie', `jwt=${accessToken}`)
+        .send({ userInfo : { password : '1234'}})
+        .expect(403)
+        .end((err, res) => {
+          res.body.should.have.property('message', '본인만 비밀번호를 확인할 수 있습니다.');
+          done()
+        })
+    });
+  });
+});
