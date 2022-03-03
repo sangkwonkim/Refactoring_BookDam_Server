@@ -4,6 +4,32 @@ const models = require('../models');
 const should = require('should');
 const { User: UserModel, Article: ArticleModel, Follow: FollowModel } = require('../models');
 const jwt = require('jsonwebtoken');
+const articleTestData = [
+  {
+    id: '1',
+    user_Id: '2',
+    book_Title: '가재가 노래하는 곳',
+    book_Author: '델리아 오언스 지음, 김선형 옮김',
+    book_Thumbnail: 'https://image.aladin.co.kr/product/19469/77/cover/s762635820_1.jpg',
+    book_Publisher: '살림',
+    sentence: '카야는 숨을 쉬는 촉촉한 흙에 가만히 손을 대었다. 그러자 습지가 카야의 어머니가 되었다',
+    comment: '모든 것을 맞춰주시는 어머니의 품 안이었기에 카야는 원하는 것을 얻을 수 있지 않았을까..',
+    createdAt: '2022-1-19',
+    updatedAt: new Date()
+  },
+  {
+    id: '2',
+    user_Id: '1',
+    book_Title: '달러구트 꿈 백화점 - 주문하신 꿈은 매진입니다',
+    book_Author: '이미예 지음',
+    book_Thumbnail: 'https://image.aladin.co.kr/product/24512/70/cover/k392630952_2.jpg',
+    book_Publisher: '팩토리나인',
+    sentence: '과거의 어렵고 힘든 일 뒤에는 그걸 이겨냈던 자신의 모습도 함께 존재한다는 사실.',
+    comment: '힘든 시절의 꿈을 꿨을 때 불쾌함만 남았었는데, 이 문장으로 생각의 전환을 할 수 있었습니다.',
+    createdAt: '2022-1-19',
+    updatedAt: new Date()
+  }
+]
 
 describe('POST /user/login', () => {
   before(() => models.sequelize.sync({ force: true }));
@@ -223,23 +249,6 @@ describe('DELETE /user/:id', () => {
     });
   });
   describe('실패 시', () => {
-    before(() => UserModel.queryInterface.bulkInsert('Users', [{
-      id : 1,
-      userId: 'guest',
-      password: '$2b$10$RJq0gXxBHhLsRhMtI8U3p./kk.KPvdohoMx179N3HvbUaDpPbMi1.',
-      userNickName: 'guest',
-      userImage: 'https://img.icons8.com/flat-round/512/000000/bird--v1.png',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }, {
-      id : 2,
-      userId: 'sangkwon',
-      password: '$2b$10$RJq0gXxBHhLsRhMtI8U3p./kk.KPvdohoMx179N3HvbUaDpPbMi1.',
-      userNickName: 'sangkwon',
-      userImage: 'https://img.icons8.com/flat-round/512/000000/bird--v1.png',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }]));
     it('정수가 아닌 id를 입력할 경우 400을 반환한다.', (done) => {
       request(app)
         .delete('/user/one')
@@ -263,6 +272,92 @@ describe('DELETE /user/:id', () => {
         .end((err, res) => {
           res.body.should.have.property('message', '본인만 탈퇴를 요청할 수 있습니다.');
           done()
+        })
+    });
+  });
+});
+
+describe('GET /user/:id', () => {
+  before(() => models.sequelize.sync({ force: true }));
+  before(() => UserModel.queryInterface.bulkInsert('Users', [{
+    id : 1,
+    userId: 'guest',
+    password: '$2b$10$RJq0gXxBHhLsRhMtI8U3p./kk.KPvdohoMx179N3HvbUaDpPbMi1.',
+    userNickName: 'guest',
+    userImage: 'https://img.icons8.com/flat-round/512/000000/bird--v1.png',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }, {
+    id : 2,
+    userId: 'sangkwon',
+    password: '$2b$10$RJq0gXxBHhLsRhMtI8U3p./kk.KPvdohoMx179N3HvbUaDpPbMi1.',
+    userNickName: 'sangkwon',
+    userImage: 'https://img.icons8.com/flat-round/512/000000/bird--v1.png',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }]));
+  before(() => ArticleModel.queryInterface.bulkInsert('Articles', articleTestData));
+  const user = {
+    id: 2,
+    userId: 'sangkwon'
+  };
+  const accessToken = jwt.sign(user, process.env.ACCESS_SECRET, { expiresIn: '1d' });
+  describe('성공 시', () => {
+    it('응답 상태 코드는 200을 반환한다.', (done) => {
+      request(app)
+        .get('/user/2?page=1')
+        .set('Cookie', `jwt=${accessToken}`)
+        .expect(200, done)
+    });
+    it('본인의 정보 요청 시 유저 정보, 팔로우 정보, 아티클 정보를 반환한다.', (done) => {
+      const accessToken = jwt.sign(user, process.env.ACCESS_SECRET, { expiresIn: '1d' });
+      request(app)
+        .get('/user/2?page=1')
+        .set('Cookie', `jwt=${accessToken}`)
+        .end((err, res) => {
+          console.log(res.body)
+          res.body.should.have.property('message', 'success');
+          res.body.userInfo.should.have.property('id', 2);
+          res.body.follow.should.have.property('following', 0);
+          res.body.articleData.should.have.property('count', 1);
+          done()
+        })
+    });
+    it('다른 사용자의 정보 요청 시 유저 정보, 팔로우 정보, 아티클 정보, 팔로우 여부를 반환한다.', (done) => {
+      const accessToken = jwt.sign(user, process.env.ACCESS_SECRET, { expiresIn: '1d' });
+      request(app)
+        .get('/user/1?page=1')
+        .set('Cookie', `jwt=${accessToken}`)
+        .end((err, res) => {
+          // console.log(res.body)
+          res.body.should.have.property('message', 'success');
+          res.body.userInfo.should.have.property('id', 1);
+          res.body.should.have.property('follow');
+          res.body.should.have.property('articleData');
+          res.body.should.have.property('isfollow', 0);
+          done()
+        })
+    });
+  });
+  describe('실패 시', () => {
+    it('정수가 아닌 id를 입력할 경우 400을 반환한다.', (done) => {
+      request(app)
+        .get('/user/one')
+        .expect(400, done)
+    });
+    it('요청에 쿠키가 없을 경우 401을 반환한다.', (done) => {
+      request(app)
+        .get('/user/1?page=1')
+        .expect(401, done)
+    });
+    it('존재하지 않는 사용자에 대한 요청일 경우 404를 반환한다.', (done) => {
+      request(app)
+        .get('/user/5?page=1')
+        .set('Cookie', `jwt=${accessToken}`)
+        .expect(404)
+        .end((err, res) => {
+          res.body.should.have.property('message', '사용자 정보를 찾을 수 없습니다.');
+          done();
         })
     });
   });
