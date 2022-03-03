@@ -305,14 +305,14 @@ describe('GET /user/:id', () => {
   describe('성공 시', () => {
     it('응답 상태 코드는 200을 반환한다.', (done) => {
       request(app)
-        .get('/user/2?page=1')
+        .get('/user/2')
         .set('Cookie', `jwt=${accessToken}`)
         .expect(200, done)
     });
     it('본인의 정보 요청 시 유저 정보, 팔로우 정보, 아티클 정보를 반환한다.', (done) => {
       const accessToken = jwt.sign(user, process.env.ACCESS_SECRET, { expiresIn: '1d' });
       request(app)
-        .get('/user/2?page=1')
+        .get('/user/2')
         .set('Cookie', `jwt=${accessToken}`)
         .end((err, res) => {
           res.body.should.have.property('message', 'success');
@@ -325,7 +325,7 @@ describe('GET /user/:id', () => {
     it('다른 사용자의 정보 요청 시 유저 정보, 팔로우 정보, 아티클 정보, 팔로우 여부를 반환한다.', (done) => {
       const accessToken = jwt.sign(user, process.env.ACCESS_SECRET, { expiresIn: '1d' });
       request(app)
-        .get('/user/1?page=1')
+        .get('/user/1')
         .set('Cookie', `jwt=${accessToken}`)
         .end((err, res) => {
           res.body.should.have.property('message', 'success');
@@ -345,12 +345,12 @@ describe('GET /user/:id', () => {
     });
     it('요청에 쿠키가 없을 경우 401을 반환한다.', (done) => {
       request(app)
-        .get('/user/1?page=1')
+        .get('/user/1')
         .expect(401, done)
     });
     it('존재하지 않는 사용자에 대한 요청일 경우 404를 반환한다.', (done) => {
       request(app)
-        .get('/user/5?page=1')
+        .get('/user/5')
         .set('Cookie', `jwt=${accessToken}`)
         .expect(404)
         .end((err, res) => {

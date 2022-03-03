@@ -6,9 +6,8 @@ module.exports = {
   get: async (req, res) => {
     try {
       const id = parseInt(req.params.user_Id, 10);
-      const page = parseInt(req.query.page, 10);
+      const page = parseInt(req.query.page, 10) || 1;
       if (Number.isNaN(id)) return res.status(400).json({ message: '요청이 잘 못 되었습니다.' });
-      if (Number.isNaN(page)) return res.status(400).json({ message: '요청이 잘 못 되었습니다.' });
       const cookie = req.cookies.jwt;
       if (!cookie) return res.status(401).json({ message: '로그인 유저가 아닙니다.' });
       const decodedData = isAuthorized(cookie);
@@ -59,7 +58,7 @@ module.exports = {
         createdAt: today
       });
       delete createArticle.dataValues.updatedAt;
-      res.status(200).json({ message: 'success', articleInfo: createArticle });
+      res.status(201).json({ message: 'success', articleInfo: createArticle });
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
         return res.status(401).json({ message: '로그인 유효기간이 만료되었습니다.' });

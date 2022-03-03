@@ -30,11 +30,11 @@ module.exports = {
       },
       sentence: {
         allowNull: false,
-        type: Sequelize.STRING(600)
+        type: Sequelize.STRING
       },
       comment: {
         allowNull: false,
-        type: Sequelize.STRING(600)
+        type: Sequelize.STRING
       },
       createdAt: {
         allowNull: false,
