@@ -315,7 +315,6 @@ describe('GET /user/:id', () => {
         .get('/user/2?page=1')
         .set('Cookie', `jwt=${accessToken}`)
         .end((err, res) => {
-          console.log(res.body)
           res.body.should.have.property('message', 'success');
           res.body.userInfo.should.have.property('id', 2);
           res.body.follow.should.have.property('following', 0);
@@ -329,7 +328,6 @@ describe('GET /user/:id', () => {
         .get('/user/1?page=1')
         .set('Cookie', `jwt=${accessToken}`)
         .end((err, res) => {
-          // console.log(res.body)
           res.body.should.have.property('message', 'success');
           res.body.userInfo.should.have.property('id', 1);
           res.body.should.have.property('follow');
@@ -358,6 +356,92 @@ describe('GET /user/:id', () => {
         .end((err, res) => {
           res.body.should.have.property('message', '사용자 정보를 찾을 수 없습니다.');
           done();
+        })
+    });
+  });
+});
+
+describe('PATCH /user/:id', () => {
+  before(() => models.sequelize.sync({ force: true }));
+  before(() => UserModel.queryInterface.bulkInsert('Users', [{
+    id : 1,
+    userId: 'guest',
+    password: '$2b$10$RJq0gXxBHhLsRhMtI8U3p./kk.KPvdohoMx179N3HvbUaDpPbMi1.',
+    userNickName: 'guest',
+    userImage: 'https://img.icons8.com/flat-round/512/000000/bird--v1.png',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }]));
+  const user = {
+    id: 1,
+    userId: 'guest'
+  };
+  const accessToken = jwt.sign(user, process.env.ACCESS_SECRET, { expiresIn: '1d' });
+  describe('성공 시', () => {
+    it('응답 상태 코드는 200을 반환한다.', (done) => {
+      request(app)
+        .patch('/user/1')
+        .set('Cookie', `jwt=${accessToken}`)
+        .send({ userInfo : {
+          userNickName: 'kim',
+          password : '9876'
+        }})
+        .expect(200, done)
+    });
+    it('응답에 수정된 유저의 정보가 포함되어 있어야 한다.', (done) => {
+      request(app)
+        .patch('/user/1')
+        .set('Cookie', `jwt=${accessToken}`)
+        .send({ userInfo : {
+          userNickName: 'bookdam',
+          password : '4567'
+        }})
+        .expect(200)
+        .end((err, res) => {
+          res.body.should.have.property('userInfo');
+          done();
+        })
+    });
+    it('비밀번호나 닉네임 둘 중 하나라도 있으면 변경되어야 한다.', (done) => {
+      request(app)
+        .patch('/user/1')
+        .set('Cookie', `jwt=${accessToken}`)
+        .send({ userInfo : {
+          userNickName: 'sangkwon',
+        }})
+        .expect(200, done)
+        })
+    });
+  describe('실패 시', () => {
+    it('정수가 아닌 id를 입력할 경우 400을 반환한다.', (done) => {
+      request(app)
+        .patch('/user/one')
+        .expect(400, done)
+    });
+    it('요청에 쿠키가 없을 경우 401을 반환한다.', (done) => {
+      request(app)
+        .patch('/user/1')
+        .expect(401, done)
+    });
+    it('요청에 변경할 사용자의 정보가 없다면 400을 반환한다.', (done) => {
+      request(app)
+        .patch('/user/1')
+        .set('Cookie', `jwt=${accessToken}`)
+        .send()
+        .expect(400)
+        .end((err, res) => {
+          res.body.should.have.property('message', '수정할 정보를 정확하게 입력해주세요.');
+          done();
+        })
+    });
+    it('입력된 id와 쿠키의 id가 다를 경우 403을 반환한다.', (done) => {
+      request(app)
+        .patch('/user/3')
+        .set('Cookie', `jwt=${accessToken}`)
+        .expect(403)
+        .end((err, res) => {
+          res.body.should.have.property('message', '본인만 회원정보를 수정할 수 있습니다.');
+          done()
         })
     });
   });

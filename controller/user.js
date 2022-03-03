@@ -176,7 +176,7 @@ module.exports = {
         attributes: { exclude: ['updatedAt', 'createdAt', 'password'] },
         where: { id: id }
       });
-      res.status(201).json({ message: 'success', userInfo: findUser });
+      res.status(200).json({ message: 'success', userInfo: findUser });
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
         return res.status(401).json({ message: '로그인 유효기간이 만료되었습니다.' });
