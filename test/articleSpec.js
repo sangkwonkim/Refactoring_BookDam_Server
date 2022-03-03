@@ -188,3 +188,109 @@ describe('POST /ariticle/:user_Id', () => {
         });
     });
 });
+
+describe('PATCH /ariticle/:user_Id', () => {
+    before(() => models.sequelize.sync({ force: true }));
+    before(() => UserModel.queryInterface.bulkInsert('Users', [{
+        id : 1,
+        userId: 'guest',
+        password: '$2b$10$RJq0gXxBHhLsRhMtI8U3p./kk.KPvdohoMx179N3HvbUaDpPbMi1.',
+        userNickName: 'guest',
+        userImage: 'https://img.icons8.com/flat-round/512/000000/bird--v1.png',
+        createdAt: new Date(),
+        updatedAt: new Date()
+    }]));
+    const user = {
+        id: 1,
+        userId: 'guest'
+    };
+    const accessToken = jwt.sign(user, process.env.ACCESS_SECRET, { expiresIn: '1d' });
+    before(() => ArticleModel.queryInterface.bulkInsert('Articles', [{
+        id: '1',
+        user_Id: '1',
+        book_Title: '달러구트 꿈 백화점 - 주문하신 꿈은 매진입니다',
+        book_Author: '이미예 지음',
+        book_Thumbnail: 'https://image.aladin.co.kr/product/24512/70/cover/k392630952_2.jpg',
+        book_Publisher: '팩토리나인',
+        sentence: '과거의 어렵고 힘든 일 뒤에는 그걸 이겨냈던 자신의 모습도 함께 존재한다는 사실.',
+        comment: '힘든 시절의 꿈을 꿨을 때 불쾌함만 남았었는데, 이 문장으로 생각의 전환을 할 수 있었습니다.',
+        createdAt: '2022-1-19',
+        updatedAt: new Date()
+    }]));
+    describe('성공 시', () => {
+        it('응답 상태 코드 200과 아티클 정보를 반환한다.', (done) => {
+            request(app)
+                .patch('/article/1?article_Id=1')
+                .set('Cookie', `jwt=${accessToken}`)
+                .send({articleInfo : {
+                    sentence: '지금은 수정 중입니다.',
+                    comment: '지금은 수정 중입니다.',
+                }})
+                .end((err, res) => {
+                    res.status.should.equal(200)
+                    res.body.should.have.property('message', 'success');
+                    res.body.should.have.property('userInfo');
+                done();
+                });
+        });
+    });
+    describe('실패 시', () => {
+        it('정수가 아닌 id를 입력할 경우 400을 반환한다.', (done) => {
+            request(app)
+                .patch('/article/one')
+                .set('Cookie', `jwt=${accessToken}`)
+                .send({articleInfo : {
+                    sentence: '지금은 수정 중입니다.',
+                    comment: '지금은 수정 중입니다.',
+                }})
+                .expect(400, done)
+        });
+        it('쿼리로 article_Id를 전달하지 않을 경우 400을 반환한다.', (done) => {
+            request(app)
+                .patch('/article/1')
+                .set('Cookie', `jwt=${accessToken}`)
+                .send({articleInfo : {
+                    sentence: '지금은 수정 중입니다.',
+                    comment: '지금은 수정 중입니다.',
+                }})
+                .expect(400, done)
+        });
+        it('요청에 쿠키가 없을 경우 401을 반환한다.', (done) => {
+            request(app)
+                .patch('/article/1?article_Id=1')
+                .send({articleInfo : {
+                    sentence: '지금은 수정 중입니다.',
+                    comment: '지금은 수정 중입니다.',
+                }})
+                .expect(401, done)
+        });
+        it('입력된 id와 쿠키의 id가 다를 경우 403을 반환한다.', (done) => {
+            request(app)
+                .patch('/article/3?article_Id=1')
+                .set('Cookie', `jwt=${accessToken}`)
+                .send({articleInfo : {
+                    sentence: '지금은 수정 중입니다.',
+                    comment: '지금은 수정 중입니다.',
+                }})
+                .end((err, res) => {
+                    res.status.should.equal(403)
+                    res.body.should.have.property('message', '본인만 아티클을 수정할 수 있습니다.');
+                done();
+                });
+        });
+        it('쿼리로 입력된 article_Id가 존재하지 않을 경우 404를 반환한다.', (done) => {
+            request(app)
+                .patch('/article/1?article_Id=3')
+                .set('Cookie', `jwt=${accessToken}`)
+                .send({articleInfo : {
+                    sentence: '지금은 수정 중입니다.',
+                    comment: '지금은 수정 중입니다.',
+                }})
+                .end((err, res) => {
+                    res.status.should.equal(404)
+                    res.body.should.have.property('message', '해당 아티클을 찾을 수 없습니다.');
+                done();
+                });
+        });
+    });
+});

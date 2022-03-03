@@ -120,7 +120,6 @@ module.exports = {
       const id = parseInt(req.params.user_Id, 10);
       const page = parseInt(req.query.page, 10) || 1;
       if (Number.isNaN(id)) return res.status(400).json({ message: '요청이 잘 못 되었습니다.' });
-      if (Number.isNaN(page)) return res.status(400).json({ message: '요청이 잘 못 되었습니다.' });
       const cookie = req.cookies.jwt;
       if (!cookie) return res.status(401).json({ message: '로그인 유저가 아닙니다.' });
       const decodedData = isAuthorized(cookie);
