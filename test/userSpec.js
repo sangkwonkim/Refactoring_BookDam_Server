@@ -116,20 +116,6 @@ describe('POST /user/logout', () => {
     });
   });
   describe('실패 시', () => {
-    it('회원가입을 하지 않은 유저일 경우 404를 전송한다.', (done) => {
-      request(app)
-        .post('/user/login')
-        .send({ userInfo: { userId: 'sangkwon', password: '1234' } })
-        .expect(404, done);
-    });
-    it('유저 정보가 정확하지 않을 경우 400을 리턴한다.', (done) => {
-      request(app)
-        .post('/user/login')
-        .send({ userInfo: { userId: 'guest'} })
-        .expect(400, done);
-    });
-  });
-  describe('실패 시', () => {
     it('요청 쿠키에 jwt가 없을 경우에 401을 반환한다.', (done) => {
       request(app)
         .post('/user/logout')

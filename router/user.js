@@ -2,8 +2,12 @@ const router = require('express').Router();
 const controller = require('../controller/user');
 
 router.post('/login', controller.login); // 로그인
-router.post('/logout', controller.logout); // 로그아웃
 router.post('/signup', controller.signup); // 회원가입
+router.use('*',  function(req, res, next) {
+    console.log('미들웨어가 작동합니다.');
+    next();
+})
+router.post('/logout', controller.logout); // 로그아웃
 router.delete('/:user_Id', controller.delete); // 회원탈퇴
 router.get('/:user_Id', controller.get); // 회원정보 조회
 router.patch('/:user_Id', controller.patch); // 회원정보 수정
