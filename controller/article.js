@@ -30,7 +30,8 @@ module.exports = {
       if (error.name === 'TokenExpiredError') {
         return res.status(401).json({ message: '로그인 유효기간이 만료되었습니다.' });
       }
-      res.status(500).json({ message: '아티클 조회에 실패했습니다.' });    }
+      res.status(500).json({ message: '아티클 조회에 실패했습니다.' });
+    }
   },
   post: async (req, res) => {
     try {
@@ -62,8 +63,7 @@ module.exports = {
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
         return res.status(401).json({ message: '로그인 유효기간이 만료되었습니다.' });
-      }
-      else if (error.name === 'SequelizeValidationError') {
+      } else if (error.name === 'SequelizeValidationError') {
         return res.status(400).json({ message: '아티클 정보를 정확하게 입력해주세요.' });
       }
       res.status(500).json({ message: '아티클 생성에 실패했습니다.' });

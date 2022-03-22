@@ -15,8 +15,8 @@ module.exports = {
       const decodedData = isAuthorized(cookie);
       if (id !== decodedData.id) return res.status(403).json({ message: '본인만 팔로우를 요청할 수 있습니다.' });
       const findUser = await UserModel.findOne({
-        where : { id : follow_Id }
-      })
+        where: { id: follow_Id }
+      });
       if (!findUser) return res.status(400).json({ message: '존재하지 않는 유저입니다.' });
       const followUser = await FollowModel.findOrCreate({
         where: {

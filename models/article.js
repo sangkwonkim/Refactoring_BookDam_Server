@@ -15,14 +15,14 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   Article.init({
-    user_Id: {type: DataTypes.INTEGER, allowNull: false},
-    book_Title: {type: DataTypes.STRING, allowNull: false},
-    book_Author: {type: DataTypes.STRING, allowNull: false},
-    book_Thumbnail: {type: DataTypes.STRING, allowNull: false},
-    book_Publisher: {type: DataTypes.STRING, allowNull: false},
-    sentence: {type: DataTypes.STRING(600), allowNull: false},
-    comment: {type: DataTypes.STRING(600), allowNull: false},
-    createdAt: {type: DataTypes.STRING, allowNull: false},
+    user_Id: { type: DataTypes.INTEGER, allowNull: false },
+    book_Title: { type: DataTypes.STRING, allowNull: false },
+    book_Author: { type: DataTypes.STRING, allowNull: false },
+    book_Thumbnail: { type: DataTypes.STRING, allowNull: false },
+    book_Publisher: { type: DataTypes.STRING, allowNull: false },
+    sentence: { type: DataTypes.STRING(600), allowNull: false },
+    comment: { type: DataTypes.STRING(600), allowNull: false },
+    createdAt: { type: DataTypes.STRING, allowNull: false }
   }, {
     sequelize,
     modelName: 'Article'
