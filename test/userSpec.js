@@ -299,16 +299,17 @@ describe('GET /user/:id', () => {
   describe('성공 시', () => {
     it('응답 상태 코드는 200을 반환한다.', (done) => {
       request(app)
-        .get('/user/2')
+        .get('/user/2?page=0')
         .set('Cookie', `jwt=${accessToken}`)
         .expect(200, done);
     });
     it('본인의 정보 요청 시 유저 정보, 팔로우 정보, 아티클 정보를 반환한다.', (done) => {
       const accessToken = jwt.sign(user, process.env.ACCESS_SECRET, { expiresIn: '1d' });
       request(app)
-        .get('/user/2')
+        .get('/user/2?page=0')
         .set('Cookie', `jwt=${accessToken}`)
         .end((err, res) => {
+          console.log(res.body)
           res.body.should.have.property('message', 'success');
           res.body.userInfo.should.have.property('id', 2);
           res.body.follow.should.have.property('following', 0);
@@ -319,7 +320,7 @@ describe('GET /user/:id', () => {
     it('다른 사용자의 정보 요청 시 유저 정보, 팔로우 정보, 아티클 정보, 팔로우 여부를 반환한다.', (done) => {
       const accessToken = jwt.sign(user, process.env.ACCESS_SECRET, { expiresIn: '1d' });
       request(app)
-        .get('/user/1')
+        .get('/user/1?page=0')
         .set('Cookie', `jwt=${accessToken}`)
         .end((err, res) => {
           res.body.should.have.property('message', 'success');
@@ -334,17 +335,17 @@ describe('GET /user/:id', () => {
   describe('실패 시', () => {
     it('정수가 아닌 id를 입력할 경우 400을 반환한다.', (done) => {
       request(app)
-        .get('/user/one')
+        .get('/user/one?page=0')
         .expect(400, done);
     });
     it('요청에 쿠키가 없을 경우 401을 반환한다.', (done) => {
       request(app)
-        .get('/user/1')
+        .get('/user/1?page=0')
         .expect(401, done);
     });
     it('존재하지 않는 사용자에 대한 요청일 경우 404를 반환한다.', (done) => {
       request(app)
-        .get('/user/5')
+        .get('/user/5?page=0')
         .set('Cookie', `jwt=${accessToken}`)
         .expect(404)
         .end((err, res) => {
